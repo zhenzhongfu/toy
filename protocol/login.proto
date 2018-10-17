@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+//pkg:1
+package pb;
+
+//msg:LoginS2CNotify=0
+message LoginS2CNotify {
+    uint32 code = 1;// 错误码
+}
+
+//msg:LoginC2SLogin=1
+message LoginC2SLogin {
+    string accname = 1;     //用户名                                                     
+    string platform = 2;    //平台
+    string key = 3;         //key 这里是对客户端的这条协议合法性进行校验
+    string token = 4;       //验证数据串，这里是对平台登录的合法性进行校验                 
+    uint32 timestamp = 5;   //时间戳                                                    
+    string deviceid = 6;    //deviceid                                                  
+}
+
+message p_login_info {
+    uint32 id = 1;          //角色id
+    string name = 2;        //角色名称  
+}
+//msg:LoginS2CLogin=2
+message LoginS2CLogin {
+    uint32 code = 1;         //错误码，0表示正确，4表示角色不存在(走创建),其他为错误
+    p_login_info login_info = 2;           //角色登录信息
+}
+
+//msg:LoginC2SHeartBeat=3
+message LoginC2SHeartBeat {
+}
+//msg:LoginS2CHeartBeat=4
+message LoginS2CHeartBeat {
+}
