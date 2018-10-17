@@ -322,7 +322,9 @@ func writeAll(conn net.Conn, b []byte, try int) error {
 	}
 
 	if n != len(b) {
-		b[0] = b[n]
+		size := len(b)
+		copy(b, b[n:])
+		b = b[:(size - n)]
 		return writeAll(conn, b, try+1)
 	}
 
