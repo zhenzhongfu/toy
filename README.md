@@ -1,5 +1,5 @@
 # Dio's Toy
-(https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/zhenzhongfu/toy/master/LICENSE)
+[(https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/zhenzhongfu/toy/master/LICENSE)
 
 ## 环境
 - 下载安装protoc
