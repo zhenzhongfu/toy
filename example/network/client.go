@@ -26,7 +26,7 @@ func main() {
 	n.RegistOnClosed(onClosed)
 	n.RegistOnTimeout(onTimeout)
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		n.Connect(time.Second)
 	}
 
