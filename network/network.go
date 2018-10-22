@@ -29,7 +29,6 @@ type Network struct {
 
 	isServer bool
 
-	ctx    context.Context
 	group  *errgroup.Group
 	cancel context.CancelFunc
 
@@ -45,12 +44,7 @@ type Network struct {
 }
 
 func NewNetwork() *Network {
-	ctx, cancel := context.WithCancel(context.Background())
-	group, newCtx := errgroup.WithContext(ctx)
 	return &Network{
-		ctx:      newCtx,
-		cancel:   cancel,
-		group:    group,
 		router:   NewProtoRouter(),
 		sessions: pkg.NewSafeMap(),
 		sessionPool: sync.Pool{
@@ -66,6 +60,14 @@ func (s *Network) Setup(addr string, defaultTimerInterval, defaultRecvTimeout, d
 	s.defaultTimerInterval = defaultTimerInterval
 	s.defaultRecvTimeout = defaultRecvTimeout
 	s.defaultSendTimeout = defaultSendTimeout
+}
+
+func (n *Network) SetupGroup() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	group, newCtx := errgroup.WithContext(ctx)
+	n.group = group
+	n.cancel = cancel
+	return newCtx
 }
 
 func (s *Network) GetAddr() string {
@@ -104,14 +106,14 @@ func (n *Network) RegistOnTimeout(fn func(*Session) error) {
 	n.timeoutFn = fn
 }
 
-func (n *Network) Routine(conn net.Conn) {
+func (n *Network) Routine(ctx context.Context, conn net.Conn) {
 	n.group.Go(func() error {
-		n.HandleConn(conn)
+		n.HandleConn(ctx, conn)
 		return nil
 	})
 }
 
-func (n *Network) Connect(timeout time.Duration) error {
+func (n *Network) ConnectWithCtx(ctx context.Context, timeout time.Duration) error {
 	var err error
 	var conn net.Conn
 	if timeout > 0 {
@@ -127,11 +129,11 @@ func (n *Network) Connect(timeout time.Duration) error {
 			return nil
 		}
 	}
-	n.Routine(conn)
+	n.Routine(ctx, conn)
 	return nil
 }
 
-func (n *Network) Serve() {
+func (n *Network) ServeWithCtx(ctx context.Context) {
 	ln, err := net.Listen("tcp", n.GetAddr())
 	if err != nil {
 		fmt.Println(err)
@@ -146,14 +148,14 @@ func (n *Network) Serve() {
 				continue
 			}
 
-			n.Routine(conn)
+			n.Routine(ctx, conn)
 		}
 	}()
 
 	n.Wait()
 }
 
-func (n *Network) HandleConn(conn net.Conn) {
+func (n *Network) HandleConn(ctx context.Context, conn net.Conn) {
 	s := n.GetSession()
 	s.Init(conn,
 		time.Duration(n.defaultTimerInterval)*time.Second,
@@ -167,7 +169,7 @@ func (n *Network) HandleConn(conn net.Conn) {
 
 	onConnect(n, s)
 
-	group, newCtx := errgroup.WithContext(n.ctx)
+	group, newCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
 		result := SendLoop(newCtx, n, s)
 		return result

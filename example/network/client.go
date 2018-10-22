@@ -21,13 +21,14 @@ func main() {
 
 	n := network.NewNetwork()
 	n.Setup(":8888", 1, 30, 30)
+	ctx := n.SetupGroup()
 	mod.Setup(n.GetRouter())
 	n.RegistOnConnect(onConnect)
 	n.RegistOnClosed(onClosed)
 	n.RegistOnTimeout(onTimeout)
 
 	for i := 0; i < 100; i++ {
-		n.Connect(time.Second)
+		n.ConnectWithCtx(ctx, time.Second)
 	}
 
 	n.WaitGroup()
