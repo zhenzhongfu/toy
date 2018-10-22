@@ -22,6 +22,7 @@ func main() {
 	srv := network.NewNetwork()
 	srv.Setup(":8888", 1, 30, 30)
 	ctx := srv.SetupGroup()
+
 	srv.RegistOnConnect(onConnect)
 	srv.RegistOnClosed(onClosed)
 	srv.RegistOnTimeout(onTimeout)

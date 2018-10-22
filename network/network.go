@@ -155,7 +155,7 @@ func (n *Network) ServeWithCtx(ctx context.Context) {
 	n.Wait()
 }
 
-func (n *Network) HandleConn(ctx context.Context, conn net.Conn) {
+func (n *Network) HandleConn(topCtx context.Context, conn net.Conn) {
 	s := n.GetSession()
 	s.Init(conn,
 		time.Duration(n.defaultTimerInterval)*time.Second,
@@ -169,13 +169,16 @@ func (n *Network) HandleConn(ctx context.Context, conn net.Conn) {
 
 	onConnect(n, s)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	group, newCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		result := SendLoop(newCtx, n, s)
+		defer cancel()
+		result := SendLoop(topCtx, newCtx, n, s)
 		return result
 	})
 	group.Go(func() error {
-		result := RecvLoop(newCtx, n, s)
+		defer cancel()
+		result := RecvLoop(topCtx, newCtx, n, s)
 		return result
 	})
 
@@ -184,7 +187,7 @@ func (n *Network) HandleConn(ctx context.Context, conn net.Conn) {
 	}
 }
 
-func SendLoop(ctx context.Context, n *Network, s *Session) error {
+func SendLoop(topCtx context.Context, ctx context.Context, n *Network, s *Session) error {
 	defer func() {
 		fmt.Println("sendloop done")
 		close(s.sendCh)
@@ -193,6 +196,8 @@ func SendLoop(ctx context.Context, n *Network, s *Session) error {
 
 	for {
 		select {
+		case <-topCtx.Done():
+			return nil
 		case <-ctx.Done():
 			return nil
 		case b, ok := <-s.sendCh:
@@ -213,7 +218,7 @@ func SendLoop(ctx context.Context, n *Network, s *Session) error {
 	return nil
 }
 
-func RecvLoop(ctx context.Context, n *Network, s *Session) error {
+func RecvLoop(topCtx context.Context, ctx context.Context, n *Network, s *Session) error {
 	defer func() {
 		fmt.Println("recvloop done")
 	}()
@@ -223,6 +228,8 @@ func RecvLoop(ctx context.Context, n *Network, s *Session) error {
 
 	for {
 		select {
+		case <-topCtx.Done():
+			return nil
 		case <-ctx.Done():
 			return nil
 		default:
