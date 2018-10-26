@@ -190,7 +190,7 @@ func (n *Network) HandleConn(topCtx context.Context, conn net.Conn) {
 func SendLoop(topCtx context.Context, ctx context.Context, n *Network, s *Session) error {
 	defer func() {
 		fmt.Println("sendloop done")
-		close(s.sendCh)
+		//close(s.sendCh)
 		s.conn.Close()
 	}()
 
@@ -296,13 +296,13 @@ func RecvLoop(topCtx context.Context, ctx context.Context, n *Network, s *Sessio
 }
 
 func (s *Session) Send(cmd uint32, pbmsg proto.Message) error {
-	defer func() {
-		// 此处用来捕获pointA处产生的异常,使得执行RecvLoop的go退出
-		// 当SendLoop的go退出时，若不关闭sendCh会发生阻塞
-		if err := recover(); err != nil {
-			fmt.Printf("panic:%s\n", err)
-		}
-	}()
+	/*
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Printf("panic:%s\n", err)
+			}
+		}()
+	*/
 	data, err := proto.Marshal(pbmsg)
 	if err != nil {
 		fmt.Printf("marshaling error:%s\n", err)
